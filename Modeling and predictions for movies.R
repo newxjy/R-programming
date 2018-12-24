@@ -11,13 +11,12 @@
 library(ggplot2)
 library(dplyr)
 
-### Load data
+  ### Load data
 load("/Users/newxjy/Desktop/movies.Rdata")
 
   
 ## Part 1: Data
 ## The data were obtained from IMDB and Rotten Tomatoes. The data represents 651 randomly sampled movies produced and released before 2016. There are 32 variables about the movies including: genre of the movie (genre), year the movie is released (year), audience score on Rotten Tomatoes(audience_score), critics score on Rotten Tomatoes(critics_score), and many other interesting variables.
-
 
 
 ## Part 2: Research question
@@ -26,8 +25,17 @@ load("/Users/newxjy/Desktop/movies.Rdata")
   ## More specifically, do variables such as movie genre, MPAA rating, run length, etc. work as reasonable predictors of a movie’s popularity?  
 
 
-  
 ## Part 3: Exploratory data analysis
+  ## Displaying the data structure by selecting a few variables.
+str(movies %>% 
+      select(title, title_type, genre, runtime, imdb_rating, 
+             imdb_num_votes, critics_rating, critics_score, 
+             audience_rating, audience_score, best_pic_win, 
+             best_actor_win, best_actress_win, best_dir_win))
+
+  ## Omitting NA values if there are any.
+movies <- na.omit(movies)
+summary(movies)
 
   ## Removing unrelated data from the dataset. 
 f1 <- ggplot(data = movies, aes(x = genre)) + geom_bar(fill = "skyblue") + xlab("Movie Genre") + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0))
@@ -59,16 +67,15 @@ d1 <- ggplot(fmovies, aes(x = critics_score, y = imdb_rating, color = critics_ra
 d2 <- ggplot(fmovies, aes(x = audience_score, y = imdb_rating, color = audience_rating)) + geom_point(alpha = 0.4) 
 
 
-  
 ## Part 4: Modeling
 
   ## The initial model fitting results. 
-fullMod <- lm(imdb_rating ~ genre + runtime + mpaa_rating + best_dir_win + best_pic_nom + audience_score + critics_score, data = fmovies)
+fullMod <- lm(imdb_rating ~ genre + runtime + mpaa_rating + critics_rating + best_dir_win + best_pic_nom + audience_score + critics_score, data = fmovies)
 summary(fullMod)
 anova(fullMod)
 
   ## The final model fitting results.
-finalMod <- lm(imdb_rating ~ genre + runtime + audience_score + critics_score, data = fmovies)
+finalMod <- lm(imdb_rating ~ genre + runtime + mpaa_rating + critics_rating + audience_score + critics_score, data = fmovies)
 summary(finalMod)
 anova(finalMod)
 
@@ -91,18 +98,16 @@ t4 <- ggplot(data.frame(x =finalMod$fitted.values, y = abs(resid(finalMod))), ae
 
 
 ## Part 5: Prediction
-  
-  ## Use the final model to generate rating predictions for Ameélie released in November 2011
-  ## and for Crouching Tiger, Hidden Dragon released in December 2000.
-data1 <- data.frame(genre="Comedy", runtime=122, audience_score=95, critics_score=89)
+  ## Use the final model to generate rating predictions for La La Land released in December 2016
+  ## and for Sully released in September 2016.
+data1 <- data.frame(genre="Comedy", runtime=128, mpaa_rating="PG-13", critics_rating="Certified Fresh",audience_score=81, critics_score=91)
 pred1 <- predict(finalMod, data1, interval = "predict", level = 0.95, se.fit = TRUE)
 
-data2 <- data.frame(genre="Action & Adventure", runtime=120, audience_score=86, critics_score=97)
+data2 <- data.frame(genre="Action & Adventure", runtime=120, mpaa_rating="PG-13", critics_rating="Certified Fresh", audience_score=84, critics_score=85)
 pred2 <- predict(finalMod, data2, interval = "predict", level = 0.95, se.fit = TRUE)
 
   
 ## Part 6: Conclusion
-
   ## The model diagnostics has shown that the final model in this project has met the requirements for the linear conditions to be valid. This model has also been proven to be able to predict with a certain amount of accuracy the popularity of movies using imdb_rating as a measure of popularity. However, the predictive power of this model is limited. Variables such as audience_scores and critics_scores are subjective measures unavoidably prone to bias. 
   ## Moreover, the following is a list of problems that could be further addressed. 
   ## 1. Find representatives scores from audiences and critics for movies that haven't been released in movie theatres.
